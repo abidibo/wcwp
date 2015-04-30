@@ -1,0 +1,108 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<polymer-element name="abidibo-slideshow">
+    <template>
+        <style>
+            #container {
+                display: inline-block;
+                max-width: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+            ::content img {
+                display: block;
+                max-width: 100%;
+                opacity: 0;
+                transition: 0.2s opacity ease;
+            }
+            ::content img.processed {
+                position: absolute;
+            }
+            ::content img.active {
+                opacity: 1;
+            }
+            #navigation {
+                position: absolute;
+                bottom: 0;
+                width: 100%;
+                height: 25px;
+                line-height: 25px;
+                background: rgba(0, 0, 0, 0.8);
+                text-align: center;
+            }
+            #navigation span {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #eee;
+                margin: 0 5px;
+                cursor: pointer;
+            }
+            #navigation span.active {
+                background: #ff0000;
+            }
+        </style>
+        <div id="container">
+            <content id="imgs" select="img"></content>
+            <div id="navigation"></div>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            created: function() {
+                this.prop = { dom: { dots: [] } };
+            },
+            domReady: function() {
+                this.init();
+                this.setContainerDimensions();
+                this.activate();
+                var self = this;
+                // go responsive!
+                window.addEventListener('resize', function() {
+                    self.$.container.style.width = self.prop.init_width + 'px';
+                    var width = self.$.container.offsetWidth;
+                    self.prop.height = self.prop.height * width/self.prop.width;
+                    self.prop.width = width;
+                    self.setContainerDimensions();
+                });
+            },
+            init: function() {
+                this.prop.width = this.prop.init_width = this.$.container.offsetWidth;
+                // slice to get native array from nodelist
+                this.prop.dom.imgs = Array.prototype.slice.call(this.$.imgs.getDistributedNodes());
+                var height = 0;
+                for(var i = 0, l = this.prop.dom.imgs.length; i < l; i++) {
+                    var img = this.prop.dom.imgs[i];
+                    height = Math.max(height, img.offsetHeight);
+                    // when done add class process -> position: absolute
+                    img.className += ' processed';
+                }
+                this.prop.height = height;
+            },
+            setContainerDimensions: function() {
+                this.$.container.style.width = this.prop.width + 'px';
+                this.$.container.style.height = this.prop.height + 'px';
+            },
+            activate: function() {
+                for(var i = 0, l = this.prop.dom.imgs.length; i < l; i++) {
+                    var dot = document.createElement('span');
+                    dot.setAttribute('data-index', i);
+                    if(i === 0) {
+                        dot.className = 'active';
+                        this.prop.dom.imgs[0].className += ' active';
+                    }
+                    var self = this;
+                    dot.addEventListener('click', function() {
+                        self.prop.dom.dots.forEach(function(dot) { dot.className = ''; });
+                        this.className = 'active';
+                        self.prop.dom.imgs.forEach(function(img) { img.className = img.className.replace(' active', ''); })
+                        self.prop.dom.imgs[this.getAttribute('data-index')].className += ' active';
+                    });
+                    this.$.navigation.appendChild(dot);
+                    this.prop.dom.dots.push(dot);
+                }
+            },
+        });
+    </script>
+</polymer-element>
